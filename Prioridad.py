@@ -2,9 +2,10 @@ import random
 
 class Process:
     _first_time = True
-    def __init__(self, name, execution_time):
+    def __init__(self, name, execution_time, priority):
         self.name = name
         self.execution_time = execution_time
+        self.priority = priority
         self._arrival_time = None
         self._start_time = None
         self._end_time = None
@@ -33,29 +34,33 @@ class Process:
     def calculateTs(self):
         return self._end_time - self._arrival_time
 
-class FIFO:
+class Prioridad:
     def __init__(self):
         self.queue = []
+        self.current_process = None
 
     def add_process(self, process, current_time):
         if process.getArrivalTime() is None:
             process.setArrivalTime(current_time)
         self.queue.append(process)
+        self.queue.sort(key=lambda p: p.priority)
 
     def execute(self, current_time):
         print(f"Current Time: {current_time:<3}", end="\t" if self.queue else "\n")
-        if self.queue:
-            process = self.queue[0]
+        if self.current_process is None and self.queue:
+            self.current_process = self.queue.pop(0)
+        if self.current_process:
+            process = self.current_process
             if process._first_time:
                 process.setStartTime(current_time)
-                print(f"{process.name:<10} Arrival Time: {process.getArrivalTime():<5} Execution Time: {process.execution_time:<5}")
+                print(f"{process.name:<10} Arrival Time: {process.getArrivalTime():<5} Execution Time: {process.execution_time:<5} Priority: {process.priority:<5}")
                 process._first_time = False
             else:
                 print(f"{'':<29} Execution Time: {process.execution_time:<5}")
             process.execution_time -= 1
             if process.execution_time == 0:
                 process.setEndTime(current_time + 1)
-                self.queue.pop(0)
+                self.current_process = None
                 return process
         return None
 
@@ -96,7 +101,8 @@ class ProcessGenerator:
     def generate_processes(self):
         while True:
             execution_time = random.randint(self.min_burst_time, self.max_burst_time)
-            yield Process(f"Process {self.process_number}", execution_time)
+            priority = random.randint(1, 5)  # Set max priority to 5
+            yield Process(f"Process {self.process_number}", execution_time, priority)
             self.process_number += 1
 
 class Metrics:
@@ -117,7 +123,7 @@ class Metrics:
 # Example usage
 if __name__ == "__main__":
     generator = ProcessGenerator(min_burst_time=1, max_burst_time=8)
-    time = Time(FIFO(), generator)
+    time = Time(Prioridad(), generator)
     metrics = Metrics()
     time.run()
     for process in time.completed_processes:

@@ -33,7 +33,7 @@ class Process:
     def calculateTs(self):
         return self._end_time - self._arrival_time
 
-class FIFO:
+class SJF:
     def __init__(self):
         self.queue = []
 
@@ -41,6 +41,7 @@ class FIFO:
         if process.getArrivalTime() is None:
             process.setArrivalTime(current_time)
         self.queue.append(process)
+        self.queue.sort(key=lambda p: p.execution_time)
 
     def execute(self, current_time):
         print(f"Current Time: {current_time:<3}", end="\t" if self.queue else "\n")
@@ -117,7 +118,7 @@ class Metrics:
 # Example usage
 if __name__ == "__main__":
     generator = ProcessGenerator(min_burst_time=1, max_burst_time=8)
-    time = Time(FIFO(), generator)
+    time = Time(SJF(), generator)
     metrics = Metrics()
     time.run()
     for process in time.completed_processes:
