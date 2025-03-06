@@ -42,16 +42,25 @@ class FIFO:
             process.setArrivalTime(current_time)
         self.queue.append(process)
 
-    def execute(self, current_time):
-        print(f"Current Time: {current_time:<3}", end="\t" if self.queue else "\n")
+    def execute(self, current_time, debug=False, output_callback=print):
+        msg = f"Current Time: {current_time:<3}"
+        if debug:
+            print(msg, end="\t" if self.queue else "\n")
+        output_callback(msg, end="\t" if self.queue else "\n")
+        
         if self.queue:
             process = self.queue[0]
             if process._first_time:
-                process.setStartTime(current_time)
-                print(f"{process.name:<10} Arrival Time: {process.getArrivalTime():<5} Execution Time: {process.execution_time:<5}")
+                msg = f"{process.name:<10} Arrival Time: {process.getArrivalTime():<5} Execution Time: {process.execution_time:<5}"
+                if debug:
+                    print(msg)
+                output_callback(msg)
                 process._first_time = False
             else:
-                print(f"{'':<29} Execution Time: {process.execution_time:<5}")
+                msg = f"{'':<29} Execution Time: {process.execution_time:<5}"
+                if debug:
+                    print(msg)
+                output_callback(msg)
             process.execution_time -= 1
             if process.execution_time == 0:
                 process.setEndTime(current_time + 1)

@@ -4,11 +4,13 @@ from SJF import SJF, Process as SJFProcess
 from Prioridad import Prioridad, Process as PrioridadProcess
 
 class Time:
-    def __init__(self, algorithm, generator):
+    def __init__(self, algorithm, generator, debug=False):
         self.current_time = 0
         self.algorithm = algorithm
         self.generator = generator
         self.completed_processes = []
+        self.debug = debug
+        self.output_callback = print  # Default to console print
 
     def set_algorithm(self, algorithm):
         self.algorithm = algorithm
@@ -25,6 +27,9 @@ class Time:
     def add_process(self, process):
         self.algorithm.add_process(process, self.current_time)
 
+    def set_output_callback(self, callback):
+        self.output_callback = callback
+
     def run(self):
         max_cycles = 30
         process_generator = self.generator.generate_processes()
@@ -32,7 +37,7 @@ class Time:
             if random.random() < 0.3 and self.current_time < max_cycles:
                 new_process = next(process_generator)
                 self.add_process(new_process)
-            completed_process = self.algorithm.execute(self.current_time)
+            completed_process = self.algorithm.execute(self.current_time, self.debug, self.output_callback)
             if completed_process:
                 self.completed_processes.append(completed_process)
             self.current_time += 1
@@ -72,7 +77,7 @@ class Metrics:
         return total_ts / len(self.processes)
 
 class Gestor:
-    def __init__(self, algorithm):
+    def __init__(self, algorithm, debug=False):
         self.time = None
         self.algorithm = None
         self.generator = None
@@ -80,13 +85,21 @@ class Gestor:
         self.sjf_generator = None
         self.prioridad_generator = None
         self.current_algorithm = None
+        self.debug = debug
+        self.output_callback = print
         self.initialize_generators(min_burst_time=1, max_burst_time=8)
         self._initialize_time(algorithm, type(algorithm).__name__)
+
+    def set_output_callback(self, callback):
+        self.output_callback = callback
+        if self.time:
+            self.time.set_output_callback(callback)
 
     def _initialize_time(self, algorithm, generatorName):
         self.algorithm = algorithm
         self.generator = generatorName
-        self.time = Time(algorithm, self.get_generator())
+        self.time = Time(algorithm, self.get_generator(), self.debug)
+        self.time.set_output_callback(self.output_callback)
         self.current_algorithm = type(algorithm).__name__
 
     def set_algorithm(self, algorithm):
